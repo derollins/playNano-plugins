@@ -1,5 +1,9 @@
 # playNano Plugins
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![pre-commit](https://github.com/derollins/playNano-plugins/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/derollins/playNano-plugins/actions/workflows/pre-commit.yaml)
+[![Tests](https://github.com/derollins/playNano-plugins/actions/workflows/tests.yaml/badge.svg)](https://github.com/derollins/playNano-plugins/actions/workflows/tests.yaml)
+
 A collection of **optional analysis modules, processing filters, and plotting helpers**
 for use with the [playNano](https://github.com/derollins/playNano) platform.
 
