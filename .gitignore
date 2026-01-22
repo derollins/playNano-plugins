@@ -1,0 +1,59 @@
+# Logs
+*.log
+
+# Python cache/compiled files
+__pycache__/
+*.py[cod]
+
+# Ruff / linting cache
+.ruff_cache/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Editor / IDE settings
+.vscode/
+.idea/
+
+# Virtual environments
+.venv/
+env/
+*.env
+
+# Test / coverage / CI artifacts
+htmlcov/
+.tox/
+.nox/
+.coverage*
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Documentation builds
+docs/_build/
+docs/_generated/
+
+# Jupyter notebook checkpoints
+**/.ipynb_checkpoints/
+
+# Build & distribution artifacts
+build/
+dist/
+*.egg-info/
+
+_version.py
+
+# Outputs from notebooks from running pipelines
+output/
+*.gif
+
+#  File to trigger docs rebuilds
+.docs_trigger
+
+.flake8
+
+.mypy_cache/

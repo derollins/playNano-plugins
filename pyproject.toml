@@ -1,0 +1,180 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "playnano-plugins"
+version = "0.0.1"
+description = "A collection of plugin analysis modules and processing filters for playNano"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "D. E. Rollins", email = "d.e.rollins@leeds.ac.uk" }
+]
+license = { text = "GPL-3.0-or-later" }
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Natural Language :: English",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+keywords = [
+  # Core domain
+  "AFM",
+  "atomic force microscopy",
+  "high-speed AFM",
+  "HS-AFM",
+  "scanning probe microscopy",
+  "SPM",
+  "nanoscience",
+
+  # Techniques and data
+  "image processing",
+  "video processing",
+  "video analysis",
+  "time-series analysis",
+
+  # Scientific software context
+  "scientific visualization",
+  "data analysis",
+  "microscopy data",
+  "scientific computing",
+  "open science",
+  "FAIR data",
+  "reproducible research",
+
+  # Target users
+  "materials science",
+  "biophysics",
+  "nanotechnology",
+  "biomolecular imaging",
+  "surface analysis",
+]
+dependencies = [
+  "playnano",
+  "numpy",
+  "scikit-image",
+  "matplotlib",
+  "pandas",
+]
+
+[project.optional-dependencies]
+topostats = ["topostats"]
+dev = ["pytest", "black", "isort", "flake8", "mypy", "ruff", "codespell", "pytest-cov"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# ---- Analysis plugins  ----
+[project.entry-points."playnano.analysis"]
+particle_boundary_size = "playnano_plugins.analysis.particle_boundary_size:BoundarySizeModule"
+
+# ---- Processing plugins ----
+[project.entry-points."playnano.filters"]
+topostats_filter = "playnano_plugins.processing.topostats_filter:topostats_filter"
+
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+include = '\.pyi?$'
+
+exclude = '''
+(
+  ^\.git
+| ^\.hg
+| ^\.mypy_cache
+| ^\.tox
+| ^\.venv
+| ^_build
+| ^buck-out
+| ^build
+| ^dist
+| \.ipynb$
+)
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+combine_as_imports = true
+known_first_party = ["playnano_plugins"]
+known_third_party = ["numpy","scipy","matplotlib","skimage","ruptures","sknw"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+respect-gitignore = true
+src = ["src"]
+exclude = ["notebooks", "*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "C4", "D"]
+ignore = ["D100", "D104", "D203", "D212", "D401"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+  "D103",  # Missing docstring in public function
+]
+
+[tool.codespell]
+skip = "*.egg-info,*.png,*.jpg,*.jpeg,*.gif,*.bmp,*.svg,*.ico,*.pdf,*.zip,*.gz,*.bz2,*.xz,*.7z,*.mp3,*.wav,*.mp4,*.mov,*.tif,*.tiff,*.ipynb,docs/_build/*,build/*,dist/*,*.html,*.css,*.js"
+ignore-words-list = "tabel,crate"
+check-filenames = false
+check-hidden = false
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = ["src"]
+
+# Only check your library code; do not include tests here.
+files = ["src"]
+
+# Regular package (you created src/pnanolocz_lib/__init__.py)
+explicit_package_bases = false
+namespace_packages = false
+
+# Your existing strictness
+strict = true
+warn_unused_ignores = false
+disallow_untyped_defs = true
+exclude = '^tests/'
+
+[[tool.mypy.overrides]]
+module = [
+    "skimage.*",
+    "numpy.*"
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=playnano_plugins --cov-report=term-missing --cov-append"
+testpaths = ["tests"]
+filterwarnings = [
+  "ignore::pyparsing.exceptions.PyparsingDeprecationWarning",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["playnano_plugins"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+  "raise NotImplementedError"
+]
