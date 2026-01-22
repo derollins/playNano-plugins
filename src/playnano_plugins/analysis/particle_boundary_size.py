@@ -1,3 +1,4 @@
+# mypy: disable-error-code=type-arg
 """
 Particle boundary size analysis module for the playNano analysis pipeline.
 
@@ -19,7 +20,8 @@ from typing import Any, Optional
 
 import numpy as np
 from playnano.analysis.base import AnalysisModule
-from skimage.measure import label as sk_label, regionprops
+from skimage.measure import label as sk_label
+from skimage.measure import regionprops
 
 
 def _bbox_max_dim_from_binary_mask(binary_mask: np.ndarray) -> float:
@@ -102,7 +104,7 @@ class BoundarySizeModule(AnalysisModule):
 
     def run(
         self,
-        stack,
+        stack: Any,
         previous_results: Optional[dict[str, Any]] = None,
         *,
         tracking_module: str = "particle_tracking",
@@ -220,6 +222,7 @@ class BoundarySizeModule(AnalysisModule):
             track_frames = []
             track_timestamps = []
             track_max_dim = []
+            track_state: list[float] | None
             track_state = [] if threshold is not None else None
 
             if len(frames) != len(pt_indices):
@@ -292,7 +295,8 @@ class BoundarySizeModule(AnalysisModule):
                     else:
                         state_val = int(max_dim > threshold)
 
-                    track_state.append(state_val)
+                    if track_state is not None:
+                        track_state.append(state_val)
                     row["state"] = state_val
 
                 rows.append(row)

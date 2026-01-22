@@ -1,7 +1,7 @@
 # playNano Plugins
 
 A collection of **optional analysis modules, processing filters, and plotting helpers**
-for use with the `playNano` framework.
+for use with the [playNano](https://github.com/derollins/playNano) platform.
 
 This repository contains extensions that are useful alongside playNano but are not
 part of the core package.
@@ -20,19 +20,21 @@ image stacks and videos. This plugin repository extends that framework with:
 Keeping these components separate allows optional dependencies and faster iteration
 on experimental or domain-specific workflows.
 
+The full playNano documentation can be found here: <https://derollins.github.io/playNano>
+
 ---
 
 ## Contents
 
 ### Analysis plugins
 
-- **`particle_boundary_size`**  
+- **`particle_boundary_size`**
   Measures the maximum bounding-box dimension of tracked particles over time, with
   optional threshold-based state classification.
 
 ### Processing filters
 
-- **`topostats_filter`** *(optional dependency)*  
+- **`topostats_filter`** *(optional dependency)*
   A wrapper around the TopoStats filtering pipeline, exposed in a form suitable for
   use from the playNano CLI and API.
 
@@ -126,7 +128,7 @@ fig, anim = animate_boundary_size_crop(
 This filter using the [TopoStats](https://github.com/AFM-SPM/TopoStats) filter module to
 filter and flatten AFM images.
 
-See the TopoStats Flattening documenation for more details and use:
+See the TopoStats Flattening documentation for more details and use:
 [https://afm-spm.github.io/TopoStats/main/advanced/flattening.html](https://afm-spm.github.io/TopoStats/main/advanced/flattening.html)
 
 ```python

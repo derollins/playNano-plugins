@@ -1,24 +1,26 @@
+# mypy: disable-error-code=type-arg
 """Plotting functions for particle boundary size analysis."""
 
-from __future__ import annotations
-
-from typing import Iterable, Optional, Sequence, Tuple
+from typing import Any, Iterable, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib import animation
-from skimage.measure import label as sk_label, regionprops
+from matplotlib.animation import FuncAnimation
+from matplotlib.figure import Figure
+from skimage.measure import label as sk_label
+from skimage.measure import regionprops
 
 
 def plot_boundary_over_time(
-    boundary_out: dict,
+    boundary_out: dict[str, Any],
     *,
     track_id: Optional[int] = None,
     threshold: Optional[float] = None,
-    x: str = "frame",  # or "timestamp"
-    figsize=(10, 6),
-):
+    x: str = "frame",
+    figsize: Tuple[float, float] = (10, 6),
+) -> Figure:
     """
     Plot max_dim and (optionally) state over time for one track.
 
@@ -100,8 +102,8 @@ def plot_boundary_over_time_multiple_tracks(
     track_ids: Optional[Iterable[int]] = None,
     max_tracks: int = 10,
     x: str = "frame",  # "frame" or "timestamp"
-    figsize=(10, 5),
-):
+    figsize: Tuple[float, float] = (10, 5),
+) -> Figure:
     """
     Plot max_dim over time for multiple tracks on a single axis.
 
@@ -130,13 +132,15 @@ def plot_boundary_over_time_multiple_tracks(
 
     # Determine which tracks to plot
     if track_ids is None:
-        track_ids = df["track_id"].dropna().unique().astype(int)[:max_tracks]
+        track_ids_list: list[int] = (
+            df["track_id"].dropna().unique().astype(int)[:max_tracks].tolist()
+        )
     else:
-        track_ids = list(track_ids)
+        track_ids_list = list(track_ids)
 
     fig, ax = plt.subplots(figsize=figsize)
 
-    for tid in track_ids:
+    for tid in track_ids_list:
         dft = df[df["track_id"] == tid].sort_values(x)
         if dft.empty:
             continue
@@ -152,7 +156,7 @@ def plot_boundary_over_time_multiple_tracks(
     ax.set_ylabel("Max bbox dimension")
     ax.set_title("Boundary size over time (multiple tracks)")
 
-    if len(track_ids) <= 12:
+    if len(track_ids_list) <= 12:
         ax.legend(ncols=2, fontsize=8)
     else:
         ax.legend(fontsize=7, ncols=3)
@@ -162,7 +166,7 @@ def plot_boundary_over_time_multiple_tracks(
 
 
 def animate_boundary_size_crop(
-    boundary_out: dict,
+    boundary_out: dict[str, Any],
     masks: Sequence[np.ndarray],
     *,
     track_id: Optional[int] = None,
@@ -170,9 +174,10 @@ def animate_boundary_size_crop(
     fps: int = 6,
     origin_lower: bool = True,
     threshold: Optional[float] = None,
+    label_value_fallback: int = 1,
     figsize: Tuple[float, float] = (6, 6),
     save_path: Optional[str] = None,
-):
+) -> tuple[Figure, FuncAnimation]:
     """
     Animate a cropped mask region around a tracked particle over time.
 
@@ -299,7 +304,7 @@ def animate_boundary_size_crop(
     ax.set_ylabel("y (cropped)")
 
     # --- animation update ----------------------------------------------------
-    def update(i):
+    def update(i: int) -> list[Any]:
         frame_idx = frames[i]
         if frame_idx < 0 or frame_idx >= len(masks):
             ax.set_title(f"Frame {frame_idx} out of range")

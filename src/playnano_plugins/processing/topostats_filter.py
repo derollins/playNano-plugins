@@ -1,16 +1,26 @@
+# mypy: disable-error-code=type-arg
+
 """playNano plugin module to apply Topostats filtering operations within playNano."""
 
 import logging
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, MutableMapping, Optional
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
 
-def _deep_update(dst: dict, src: Mapping[str, Any]) -> dict:
+def _deep_update(
+    dst: MutableMapping[str, Any],
+    src: Mapping[str, Any],
+) -> MutableMapping[str, Any]:
+    """
+    Recursively update mapping ``dst`` with values from ``src``.
+
+    Nested mappings are merged; non-mapping values overwrite existing entries.
+    """
     for k, v in src.items():
-        if isinstance(v, Mapping) and isinstance(dst.get(k), dict):
+        if isinstance(v, Mapping) and isinstance(dst.get(k), MutableMapping):
             _deep_update(dst[k], v)
         else:
             dst[k] = v
@@ -60,16 +70,17 @@ def _build_filter_config(
     scars_threshold_high: Optional[float] = None,
     scars_max_scar_width: Optional[int] = None,
     scars_min_scar_length: Optional[int] = None,
-) -> dict[str, Any]:
+) -> MutableMapping[str, Any]:
     """
     Build a TopoStats-compatible filter config from defaults + overrides.
 
     Explicit keyword args override both defaults and any values provided by
     `filter_config`.
     """
-    cfg = _default_filter_config()
+    cfg: MutableMapping[str, Any] = _default_filter_config()
+
     if filter_config is not None:
-        cfg = _deep_update(cfg, dict(filter_config))
+        _deep_update(cfg, filter_config)
 
     # Apply explicit overrides (only when not None)
     if row_alignment_quantile is not None:
@@ -177,6 +188,25 @@ def topostats_filter(
     ndarray or None
         Filtered frame (or original frame / None depending on `on_failure`).
     """
+    frame = np.asarray(frame)
+
+    if frame.ndim != 2:
+        raise ValueError(f"Expected a 2D frame, got shape {frame.shape}")
+
+    if frame.size == 0:
+        if on_failure == "return_none":
+            return None
+        if on_failure == "raise":
+            raise ValueError("Empty frame provided")
+        return frame  # return_input
+
+    if np.isnan(frame).any():
+        if on_failure == "return_none":
+            return None
+        if on_failure == "raise":
+            raise ValueError("NaNs present in frame")
+        return frame  # return_input
+
     # Lazy import: keep TopoStats optional
     try:
         from topostats.filters import Filters
@@ -185,22 +215,6 @@ def topostats_filter(
             "TopoStats is required for topostats_flatten. "
             "Install with: pip install playnano-plugins[topostats]"
         ) from e
-
-    if frame.ndim != 2:
-        raise ValueError(f"Expected a 2D frame, got shape {frame.shape}.")
-
-    if frame.size == 0:
-        logger.warning("Empty frame provided to topostats_flatten.")
-        return None if on_failure == "return_none" else frame
-
-    if np.isnan(frame).any():
-        # You could also pre-fill NaNs here, but this is safer by default.
-        logger.warning("NaNs present in frame; skipping TopoStats flatten.")
-        if on_failure == "return_none":
-            return None
-        if on_failure == "raise":
-            raise ValueError("NaNs present in frame; skipping TopoStats flatten.")
-        return frame
 
     config = _build_filter_config(
         filter_config=filter_config,
@@ -238,7 +252,7 @@ def topostats_filter(
             logger.warning(msg)
             return None if on_failure == "return_none" else frame
 
-        return out
+        return np.asarray(out, dtype=float)
 
     except Exception as e:
         if on_failure == "raise":
