@@ -20,8 +20,7 @@ from typing import Any, Optional
 
 import numpy as np
 from playnano.analysis.base import AnalysisModule
-from skimage.measure import label as sk_label
-from skimage.measure import regionprops
+from skimage.measure import label as sk_label, regionprops
 
 
 def _bbox_max_dim_from_binary_mask(binary_mask: np.ndarray) -> float:

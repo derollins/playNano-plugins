@@ -9,8 +9,7 @@ import pandas as pd
 from matplotlib import animation
 from matplotlib.animation import FuncAnimation
 from matplotlib.figure import Figure
-from skimage.measure import label as sk_label
-from skimage.measure import regionprops
+from skimage.measure import label as sk_label, regionprops
 
 
 def plot_boundary_over_time(
