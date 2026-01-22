@@ -75,6 +75,7 @@ dev = [
   "codespell",
   "pytest-cov",
   "pre-commit",
+  "nbstripout",
 ]
 
 [tool.setuptools]

@@ -47,7 +47,7 @@ The full playNano documentation can be found here: <https://derollins.github.io/
 
 ## Installation
 
-### Clone the repository from Github
+### Clone the repository from GitHub
 
 ```bash
 git clone https://github.com/derollins/playNano-plugins
@@ -69,7 +69,7 @@ pip install git+https://github.com/derollins/playNano-plugins
 With optional TopoStats support:
 
 ```bash
-pip install -e ".[topostat
+pip install -e ".[topostats]"
 ```
 
 TopoStats is only required if you use the topostats_filter processing plugin.
@@ -125,10 +125,10 @@ fig, anim = animate_boundary_size_crop(
 
 ### Using the TopoStats filter
 
-This filter using the [TopoStats](https://github.com/AFM-SPM/TopoStats) filter module to
-filter and flatten AFM images.
+This filter uses the [TopoStats](https://github.com/AFM-SPM/TopoStats) filter module to
+filter and flatten AFM image frames.
 
-See the TopoStats Flattening documentation for more details and use:
+See the TopoStats Flattening documentation for more details on usage:
 [https://afm-spm.github.io/TopoStats/main/advanced/flattening.html](https://afm-spm.github.io/TopoStats/main/advanced/flattening.html)
 
 ```python
@@ -147,7 +147,7 @@ passing a configuration dictionary.
 
 ---
 
-Writing your own plugins
+## Writing your own plugins
 
 For guidance on writing custom analysis modules that integrate with playNano, see:
 
