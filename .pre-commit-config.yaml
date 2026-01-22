@@ -50,8 +50,12 @@ repos:
           - "--config-file=pyproject.toml"
         additional_dependencies:
           - numpy
+          - pandas
+          - scikit-image
+          - matplotlib
           - types-setuptools
           - typing-extensions
+
 
   # --- Markdown Linting ---
   - repo: https://github.com/DavidAnson/markdownlint-cli2
