@@ -211,7 +211,7 @@ def topostats_filter(
 
     # Try to import Filters (required)
     try:
-        from topostats.filters import Filters  # type: ignore
+        from topostats.filters import Filters
     except ImportError as e:
         # Keep the message actionable
         raise ImportError(
@@ -223,7 +223,7 @@ def topostats_filter(
     ts_frame = None
     topostats_ge_2_4 = False
     try:
-        from topostats.classes import TopoStats  # type: ignore
+        from topostats.classes import TopoStats
 
         ts_frame = TopoStats(
             image_original=frame,
