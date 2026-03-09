@@ -1,6 +1,12 @@
 # mypy: disable-error-code=type-arg
 
-"""playNano plugin module to apply Topostats filtering operations within playNano."""
+"""
+playNano plugin module to apply Topostats filtering operations within playNano.
+
+This ignores most of the Topostats internals, generates a minimal ``TopoStats`` object
+with a input 2D numpy array ``frame`` which is augmented by ``pixel_to_nm_scaling``
+(default value: 1, only )
+"""
 
 import logging
 from typing import Any, Mapping, MutableMapping, Optional
@@ -139,7 +145,7 @@ def topostats_filter(
     frame: np.ndarray,
     *,
     # ---- non-filter arguments ----
-    pixel_to_nm_scaling: float = 1.0,  # require by topostats but unused here.
+    pixel_to_nm_scaling: float = 1.0,  # required by TopoStats; unused by this wrapper
     output_key: str = "gaussian_filtered",
     on_failure: str = "return_input",  # "return_input" | "return_none" | "raise"
     # ---- filter configuration file dict ----
@@ -166,21 +172,18 @@ def topostats_filter(
 
     Parameters
     ----------
-    frame
+    frame : ndarray
         2D AFM image frame.
-    pixel_to_nm_scaling
-        Pixel-to-nanometre scaling passed to TopoStats.
-    output_key
+    pixel_to_nm_scaling : float
+        Pixel-to-nanometre scaling, passed through to TopoStats.
+    output_key : str
         Name of the intermediate/final image in `filters.images` to return.
-    on_failure
-        Behaviour if filtering fails or `output_key` is missing:
-        - "return_input": return the original frame unchanged (default)
-        - "return_none": return None
-        - "raise": raise the underlying exception
-    filter_config
+    on_failure : {"return_input", "return_none", "raise"}
+        Behaviour if filtering fails or `output_key` is missing.
+    filter_config : Mapping[str, Any] | None
         Optional TopoStats-compatible configuration dict for the filter stage.
         Explicit keyword arguments override values in this dict.
-    row_alignment_quantile, threshold_method, ...
+    Other kwargs
         CLI/API-friendly overrides corresponding to TopoStats `filter:` settings.
 
     Returns
@@ -188,34 +191,53 @@ def topostats_filter(
     ndarray or None
         Filtered frame (or original frame / None depending on `on_failure`).
     """
+    # Normalize first and validate before touching TopoStats
     frame = np.asarray(frame)
 
     if frame.ndim != 2:
-        raise ValueError(f"Expected a 2D frame, got shape {frame.shape}")
+        if on_failure == "raise":
+            raise ValueError(f"Expected a 2D frame, got shape {frame.shape}")
+        return None if on_failure == "return_none" else frame
 
     if frame.size == 0:
-        if on_failure == "return_none":
-            return None
         if on_failure == "raise":
             raise ValueError("Empty frame provided")
-        return frame  # return_input
+        return None if on_failure == "return_none" else frame
 
     if np.isnan(frame).any():
-        if on_failure == "return_none":
-            return None
         if on_failure == "raise":
             raise ValueError("NaNs present in frame")
-        return frame  # return_input
+        return None if on_failure == "return_none" else frame
 
-    # Lazy import: keep TopoStats optional
+    # Try to import Filters (required)
     try:
-        from topostats.filters import Filters
+        from topostats.filters import Filters  # type: ignore
     except ImportError as e:
+        # Keep the message actionable
         raise ImportError(
-            "TopoStats is required for topostats_flatten. "
+            "TopoStats is required for topostats_filter. "
             "Install with: pip install playnano-plugins[topostats]"
         ) from e
 
+    # Try to import TopoStats (available in >= 2.4; else we pass raw image)
+    ts_frame = None
+    topostats_ge_2_4 = False
+    try:
+        from topostats.classes import TopoStats  # type: ignore
+
+        ts_frame = TopoStats(
+            image_original=frame,
+            pixel_to_nm_scaling=float(pixel_to_nm_scaling),
+            filename="frame",
+        )
+        topostats_ge_2_4 = True
+    except ImportError:
+        # Older TopoStats—Filters accepts raw image inputs directly
+        logger.info("topostats.classes not found; using older TopoStats (< 2.4)")
+        topostats_ge_2_4 = False
+        ts_frame = None
+
+    # Build configuration
     config = _build_filter_config(
         filter_config=filter_config,
         row_alignment_quantile=row_alignment_quantile,
@@ -236,15 +258,19 @@ def topostats_filter(
     )
 
     try:
-        filters = Filters(
-            image=frame,
-            pixel_to_nm_scaling=float(pixel_to_nm_scaling),
-            filename="frame",
-            **config,
-        )
+        if topostats_ge_2_4:
+            filters = Filters(topostats_object=ts_frame, **config)
+        else:
+            filters = Filters(
+                image=frame,
+                pixel_to_nm_scaling=float(pixel_to_nm_scaling),
+                filename="frame",
+                **config,
+            )
+
         filters.filter_image()
 
-        out = filters.images.get(output_key, None)
+        out = filters.images.get(output_key)
         if out is None:
             msg = f"TopoStats output '{output_key}' not found in filters.images."
             if on_failure == "raise":
@@ -257,5 +283,8 @@ def topostats_filter(
     except Exception as e:
         if on_failure == "raise":
             raise
-        logger.warning(f"Exception in topostats_flatten: {e}")
+        logger.warning(f"Exception in topostats_filter: {e}")
         return None if on_failure == "return_none" else frame
+
+
+topostats_filter.__version__ = "0.1.1"  # type: ignore[attr-defined]

@@ -3,6 +3,9 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![pre-commit](https://github.com/derollins/playNano-plugins/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/derollins/playNano-plugins/actions/workflows/pre-commit.yaml)
 [![Tests](https://github.com/derollins/playNano-plugins/actions/workflows/tests.yaml/badge.svg)](https://github.com/derollins/playNano-plugins/actions/workflows/tests.yaml)
+[![Code style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-456789.svg)](https://github.com/psf/flake8)
 
 A collection of **optional analysis modules, processing filters, and plotting helpers**
 for use with the [playNano](https://github.com/derollins/playNano) platform.
@@ -38,9 +41,9 @@ The full playNano documentation can be found here: <https://derollins.github.io/
 
 ### Processing filters
 
-- **`topostats_filter`** *(optional dependency)*
+- **`topostats_filter`** *(with optional dependency)*
   A wrapper around the TopoStats filtering pipeline, exposed in a form suitable for
-  use from the playNano CLI and API.
+  use from the playNano CLI and API. Must have [Topostats](https://github.com/AFM-SPM/TopoStats) installed.
 
 ### Plotting helpers
 

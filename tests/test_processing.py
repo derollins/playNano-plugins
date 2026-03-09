@@ -44,7 +44,19 @@ def test_build_filter_config_defaults_and_overrides():
 def test_topostats_filter_rejects_non_2d():
     frame = np.zeros((10, 10, 2))
     with pytest.raises(ValueError, match="Expected a 2D frame"):
-        topostats_filter(frame)
+        topostats_filter(frame, on_failure="raise")
+
+
+def test_topostats_filter_rejects_non_2d_returns_none():
+    frame = np.zeros((10, 10, 2))
+    out = topostats_filter(frame, on_failure="return_none")
+    assert out is None
+
+
+def test_topostats_filter_rejects_non_2d_returns_input():
+    input = np.zeros((10, 10, 2))
+    out = topostats_filter(input, on_failure="return_input")
+    assert out is input or np.array_equal(out, input)
 
 
 def test_topostats_filter_nan_handling_return_input():
