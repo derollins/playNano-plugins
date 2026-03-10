@@ -141,6 +141,24 @@ def _build_filter_config(
     return cfg
 
 
+def _build_topostats_class(frame, pixel_to_nm_scaling) -> Any:
+    # Try to import TopoStats (available in >= 2.4; else we pass raw image)
+    ts_frame = None
+    try:
+        from topostats.classes import TopoStats
+
+        ts_frame = TopoStats(
+            image_original=frame,
+            pixel_to_nm_scaling=float(pixel_to_nm_scaling),
+            filename="frame",
+        )
+    except ImportError:
+        # Older TopoStats—Filters accepts raw image inputs directly
+        logger.info("topostats.classes not found; using older TopoStats (< 2.4)")
+
+    return ts_frame
+
+
 def topostats_filter(
     frame: np.ndarray,
     *,
@@ -219,23 +237,7 @@ def topostats_filter(
             "Install with: pip install playnano-plugins[topostats]"
         ) from e
 
-    # Try to import TopoStats (available in >= 2.4; else we pass raw image)
-    ts_frame = None
-    topostats_ge_2_4 = False
-    try:
-        from topostats.classes import TopoStats
-
-        ts_frame = TopoStats(
-            image_original=frame,
-            pixel_to_nm_scaling=float(pixel_to_nm_scaling),
-            filename="frame",
-        )
-        topostats_ge_2_4 = True
-    except ImportError:
-        # Older TopoStats—Filters accepts raw image inputs directly
-        logger.info("topostats.classes not found; using older TopoStats (< 2.4)")
-        topostats_ge_2_4 = False
-        ts_frame = None
+    ts_frame = _build_topostats_class(frame, pixel_to_nm_scaling)
 
     # Build configuration
     config = _build_filter_config(
@@ -258,7 +260,7 @@ def topostats_filter(
     )
 
     try:
-        if topostats_ge_2_4:
+        if ts_frame is not None:
             filters = Filters(topostats_object=ts_frame, **config)
         else:
             filters = Filters(
