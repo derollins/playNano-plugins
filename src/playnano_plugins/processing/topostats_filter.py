@@ -156,7 +156,7 @@ def _build_topostats_class(
             filename="frame",
         )
     except ImportError:
-        logger.info("topostats.classes not found; using older TopoStats (> 2.4)")
+        logger.info("topostats.classes not found; using older TopoStats (< 2.4)")
 
     return ts_frame
 
