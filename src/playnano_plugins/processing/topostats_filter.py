@@ -141,9 +141,14 @@ def _build_filter_config(
     return cfg
 
 
-def _build_topostats_class(frame, pixel_to_nm_scaling) -> Any:
-    # Try to import TopoStats (available in >= 2.4; else we pass raw image)
-    ts_frame = None
+def _build_topostats_class(
+    frame: np.ndarray,
+    pixel_to_nm_scaling: float,
+) -> Optional[Any]:
+    """
+    Build a TopoStats object if available; otherwise return None.
+    """
+    ts_frame: Optional[Any] = None
     try:
         from topostats.classes import TopoStats
 
@@ -153,8 +158,7 @@ def _build_topostats_class(frame, pixel_to_nm_scaling) -> Any:
             filename="frame",
         )
     except ImportError:
-        # Older TopoStats—Filters accepts raw image inputs directly
-        logger.info("topostats.classes not found; using older TopoStats (< 2.4)")
+        logger.info("topostats.classes not found; using older TopoStats (&lt; 2.4)")
 
     return ts_frame
 
