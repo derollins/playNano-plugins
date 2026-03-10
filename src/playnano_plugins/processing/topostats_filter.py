@@ -4,8 +4,8 @@
 playNano plugin module to apply Topostats filtering operations within playNano.
 
 This ignores most of the Topostats internals, generates a minimal ``TopoStats`` object
-with a input 2D numpy array ``frame`` which is augmented by ``pixel_to_nm_scaling``
-(default value: 1, only )
+with an input 2D numpy array ``frame`` which is augmented by ``pixel_to_nm_scaling``
+(default value: 1) and ``filename`` with value "frame".
 """
 
 import logging
