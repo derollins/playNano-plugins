@@ -3,6 +3,7 @@ import pytest
 
 from playnano_plugins.processing.topostats_filter import (
     _build_filter_config,
+    _build_topostats_class,
     _deep_update,
     _default_filter_config,
     topostats_filter,
@@ -44,7 +45,19 @@ def test_build_filter_config_defaults_and_overrides():
 def test_topostats_filter_rejects_non_2d():
     frame = np.zeros((10, 10, 2))
     with pytest.raises(ValueError, match="Expected a 2D frame"):
-        topostats_filter(frame)
+        topostats_filter(frame, on_failure="raise")
+
+
+def test_topostats_filter_rejects_non_2d_returns_none():
+    frame = np.zeros((10, 10, 2))
+    out = topostats_filter(frame, on_failure="return_none")
+    assert out is None
+
+
+def test_topostats_filter_rejects_non_2d_returns_input():
+    input = np.zeros((10, 10, 2))
+    out = topostats_filter(input, on_failure="return_input")
+    assert out is input or np.array_equal(out, input)
 
 
 def test_topostats_filter_nan_handling_return_input():
@@ -81,6 +94,46 @@ def test_topostats_filter_importerror_message_if_topostats_missing():
     frame = np.zeros((10, 10))
     with pytest.raises(ImportError, match=r"pip install playnano-plugins\[topostats\]"):
         topostats_filter(frame)
+
+
+def test_topostats_classes_if_availble():
+    frame = np.zeros((10, 10))
+    try:
+        import topostats.classes  # noqa: F401
+    except ImportError:
+        pytest.skip(
+            "An older version of TopoStats without classes modules is installed."
+        )
+
+    ts_obj = _build_topostats_class(frame=frame, pixel_to_nm_scaling=1)
+
+    # Should be a real object, not None
+    assert ts_obj is not None
+    assert ts_obj.image_original.shape == (10, 10)
+    assert ts_obj.pixel_to_nm_scaling == 1.0
+    assert ts_obj.filename == "frame"
+
+
+def test_older_topostats_without_classes(caplog):
+    frame = np.zeros((10, 10))
+    try:
+        import topostats.classes  # noqa: F401
+
+        pytest.skip("TopoStats >=2.4 installed; ImportError path not applicable.")
+    except ImportError:
+        pass
+
+    with caplog.at_level("INFO"):
+        ts_obj = _build_topostats_class(frame=frame, pixel_to_nm_scaling=1)
+
+    # The function should return None on older TopoStats
+    assert ts_obj is None
+
+    # And it should log the info message exactly as emitted
+    assert any(
+        "topostats.classes not found; using older TopoStats (< 2.4)" in rec.message
+        for rec in caplog.records
+    )
 
 
 def test_build_filter_config_scar_overrides():
