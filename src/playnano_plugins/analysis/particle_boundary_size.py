@@ -16,7 +16,7 @@ downstream analysis and plotting.
 """
 
 import warnings
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from playnano.analysis.base import AnalysisModule
@@ -101,6 +101,66 @@ class BoundarySizeModule(AnalysisModule):
     # Pipeline 'requires' check is any-of; explicit validation is done in run().
     requires = ["particle_tracking"]
 
+    def _extract_previous_results(
+        self,
+        previous_results: Dict[str, Any],
+        detection_module: str,
+    ) -> Tuple[List[np.ndarray], List[List[Dict[str, Any]]]]:
+        """
+        Extract ``labeled_masks`` and ``features_per_frame`` from ``previous_results``.
+
+        Parameters
+        ----------
+        previous_results : dict
+            Results produced by earlier analysis modules in the pipeline.
+            Must include an entry for ``detection_module`` whose value contains
+            both ``"labeled_masks"`` and ``"features_per_frame"``.
+        detection_module : str
+            Name of the analysis module providing labeled detection results,
+            e.g. ``"feature_detection"``.
+
+        Returns
+        -------
+        (list of ndarray, list of list of dict)
+            A 2-tuple ``(labeled_masks, features_per_frame)`` where:
+            - ``labeled_masks`` is a list of 2D integer NumPy arrays representing
+              connected-component labeled images (one per frame).
+            - ``features_per_frame`` is a list (per frame) of feature dictionaries
+              that include the per-feature region label (key configurable via
+              ``label_key`` in :meth:`run`).
+
+        Raises
+        ------
+        RuntimeError
+            If the detection module is missing from ``previous_results`` or if
+            its output does not include both required keys.
+        """
+        if detection_module not in previous_results:
+            raise RuntimeError(
+                f"{self.name!r} requires detection_module={detection_module!r} "
+                f"to be present in previous_results."
+            )
+
+        det_out = previous_results[detection_module]
+
+        if "labeled_masks" not in det_out or "features_per_frame" not in det_out:
+            raise RuntimeError(
+                f"{self.name!r} requires detection output with 'labeled_masks' and "
+                f"'features_per_frame' (e.g. feature_detection)."
+            )
+        labeled_masks = det_out["labeled_masks"]
+        features_per_frame = det_out["features_per_frame"]
+        return labeled_masks, features_per_frame
+
+    @staticmethod
+    def _get_timestamp(stack: Any, frame_idx: int) -> float:
+        """Get the timestamp for a particular frame."""
+        try:
+            ts = float(stack.time_for_frame(frame_idx))
+        except Exception:
+            ts = float(frame_idx)
+        return ts
+
     def run(
         self,
         stack: Any,
@@ -176,21 +236,9 @@ class BoundarySizeModule(AnalysisModule):
                 f"{self.name!r} expected '{tracking_module}' output to contain 'tracks'."  # noqa
             )
 
-        if detection_module not in previous_results:
-            raise RuntimeError(
-                f"{self.name!r} requires detection_module={detection_module!r} "
-                f"to be present in previous_results."
-            )
-
-        det_out = previous_results[detection_module]
-        if "labeled_masks" not in det_out or "features_per_frame" not in det_out:
-            raise RuntimeError(
-                f"{self.name!r} requires detection output with 'labeled_masks' and "
-                f"'features_per_frame' (e.g. feature_detection)."
-            )
-
-        labeled_masks = det_out["labeled_masks"]
-        features_per_frame = det_out["features_per_frame"]
+        labeled_masks, features_per_frame = self._extract_previous_results(
+            previous_results, detection_module
+        )
 
         n_frames = min(len(labeled_masks), len(features_per_frame))
         if n_frames == 0:
@@ -233,13 +281,36 @@ class BoundarySizeModule(AnalysisModule):
 
             for frame_idx, pt_idx in zip(frames, pt_indices, strict=True):
                 frame_idx = int(frame_idx)
+
+                # Dense tracks can include missing detections
+                if pt_idx is None:
+
+                    # Timestamp
+                    ts = self._get_timestamp(stack, frame_idx)
+
+                    track_frames.append(frame_idx)
+                    track_timestamps.append(ts)
+                    track_max_dim.append(np.nan)
+
+                    row = {
+                        "track_id": track_id,
+                        "label": np.nan,
+                        "frame": frame_idx,
+                        "timestamp": ts,
+                        "max_dim": np.nan,
+                    }
+                    if threshold is not None:
+                        row["state"] = np.nan
+                        if track_state is not None:
+                            track_state.append(np.nan)
+
+                    rows.append(row)
+                    n_missing += 1
+                    continue
+
                 pt_idx = int(pt_idx)
 
-                # Timestamp
-                try:
-                    ts = float(stack.time_for_frame(frame_idx))
-                except Exception:
-                    ts = float(frame_idx)
+                ts = self._get_timestamp(stack, frame_idx)
 
                 label_val = np.nan  # default when missing/out-of-range
                 max_dim = np.nan
