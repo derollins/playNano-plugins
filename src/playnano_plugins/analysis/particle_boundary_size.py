@@ -284,7 +284,6 @@ class BoundarySizeModule(AnalysisModule):
 
                 # Dense tracks can include missing detections
                 if pt_idx is None:
-
                     # Timestamp
                     ts = self._get_timestamp(stack, frame_idx)
 
